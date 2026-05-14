@@ -23,10 +23,12 @@ interface ConversionResult {
 
 function App() {
   const { 
+    analyzeFile,
     processFile, 
     saveToDisk,
     progress, 
-    isProcessing
+    isProcessing,
+    fileInfo
   } = useUniversalConverter();
 
   const [results, setResults] = useState<ConversionResult[]>([]);
@@ -56,8 +58,8 @@ function App() {
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             WASM CORE v1.0
           </div>
-          <button className="btn-secondary text-[11px] py-2 px-4 uppercase tracking-widest font-bold">
-            Versión Pro
+          <button disabled className="btn-secondary text-[11px] py-2 px-4 uppercase tracking-widest font-bold opacity-50 cursor-not-allowed">
+            Versión Pro (Próximamente)
           </button>
         </div>
       </nav>
@@ -80,9 +82,15 @@ function App() {
         {/* Workspace Central */}
         <div className="lg:col-span-8 space-y-12">
           <div className="glass-card p-2 overflow-hidden">
-            <FileDropzone onFileSelect={(file) => {
+            <FileDropzone onFileSelect={async (file) => {
               (window as any)._currentFile = file;
               setLogs(prev => [...prev, `Archivo: ${file.name}`]);
+              setError(null);
+              try {
+                await analyzeFile(file);
+              } catch (err: any) {
+                setError("Error al analizar el archivo: " + err.message);
+              }
             }} />
           </div>
 
@@ -98,34 +106,49 @@ function App() {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {['mp4', 'mkv', 'mp3', 'png', 'jpg', 'webp', 'pdf', 'xlsx', 'csv'].map(fmt => (
-                <button 
-                  key={fmt}
-                  disabled={isProcessing}
-                  onClick={async () => {
-                    const file = (window as any)._currentFile;
-                    if (!file) return;
-                    setError(null);
-                    try {
-                      const url = await processFile(file, fmt);
-                      const result = {
-                        id: Math.random().toString(36).substring(7),
-                        name: `AURORA_${file.name.split('.')[0]}.${fmt}`,
-                        url,
-                        type: file.type,
-                        originalSize: file.size
-                      };
-                      setResults(prev => [result, ...prev]);
-                    } catch (err: any) {
-                      setError(err.message);
-                    }
-                  }}
-                  className="btn-secondary flex items-center justify-between hover:bg-white hover:text-black group transition-all"
-                >
-                  <span className="uppercase tracking-widest font-bold text-[10px]">{fmt}</span>
-                  <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
-                </button>
-              ))}
+              {(() => {
+                const formats: Record<string, string[]> = {
+                  media: ['mp4', 'mkv', 'mp3', 'webm'],
+                  graphic: ['png', 'jpg', 'webp'],
+                  spreadsheet: ['xlsx', 'csv', 'json'],
+                  document: fileInfo?.ext === 'pdf' ? ['txt'] : ['pdf']
+                };
+                
+                const availableFormats = fileInfo ? formats[fileInfo.category] || [] : [];
+                
+                if (availableFormats.length === 0 && (window as any)._currentFile) {
+                  return <p className="col-span-full text-xs text-slate-500 font-bold uppercase tracking-widest text-center py-4">Selecciona un archivo compatible para ver opciones</p>;
+                }
+
+                return availableFormats.map(fmt => (
+                  <button 
+                    key={fmt}
+                    disabled={isProcessing}
+                    onClick={async () => {
+                      const file = (window as any)._currentFile;
+                      if (!file) return;
+                      setError(null);
+                      try {
+                        const url = await processFile(file, fmt);
+                        const result = {
+                          id: Math.random().toString(36).substring(7),
+                          name: `AURORA_${file.name.split('.')[0]}.${fmt}`,
+                          url,
+                          type: file.type,
+                          originalSize: file.size
+                        };
+                        setResults(prev => [result, ...prev]);
+                      } catch (err: any) {
+                        setError(err.message);
+                      }
+                    }}
+                    className="btn-secondary flex items-center justify-between hover:bg-white hover:text-black group transition-all"
+                  >
+                    <span className="uppercase tracking-widest font-bold text-[10px]">{fmt}</span>
+                    <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                  </button>
+                ));
+              })()}
             </div>
 
             {isProcessing && (
@@ -227,8 +250,8 @@ function App() {
             <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest leading-loose">
               Aurora Flux Pro <br /> Soporte Prioritario <br /> Acceso API
             </p>
-            <button className="mt-6 text-[10px] font-bold text-white underline underline-offset-4 decoration-[#7028ff]">
-              Más información
+            <button disabled className="mt-6 text-[10px] font-bold text-white/50 underline underline-offset-4 decoration-[#7028ff] cursor-not-allowed">
+              Más información (Próximamente)
             </button>
           </div>
         </div>

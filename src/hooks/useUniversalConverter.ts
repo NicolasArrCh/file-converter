@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { detectFileType, type FileInfo } from '../utils/fileDetection';
-import { convertMedia } from '../engines/mediaEngine';
+
 import { convertSpreadsheet } from '../engines/spreadsheetEngine';
 import { convertGraphic } from '../engines/graphicEngine';
 import { convertDocument } from '../engines/documentEngine';
@@ -9,6 +9,12 @@ export const useUniversalConverter = () => {
   const [progress, setProgress] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentFileStatus, setCurrentFileStatus] = useState<FileInfo | null>(null);
+
+  const analyzeFile = async (file: File) => {
+    const info = await detectFileType(file);
+    setCurrentFileStatus(info);
+    return info;
+  };
 
   const processFile = async (file: File, targetFormat: string, preset?: string): Promise<string> => {
     setIsProcessing(true);
@@ -20,15 +26,15 @@ export const useUniversalConverter = () => {
         throw new Error('Archivo demasiado grande para procesamiento en el cliente (Límite: 2GB).');
       }
 
-      // 1. Universal Router: Deep detection
-      const fileInfo = await detectFileType(file);
-      setCurrentFileStatus(fileInfo);
+      // 1. Universal Router: Deep detection (re-verify or use current)
+      const fileInfo = currentFileStatus || await analyzeFile(file);
 
       let resultUrl = '';
 
       // 2. Dispatching to correct engine
       switch (fileInfo.category) {
         case 'media':
+          const { convertMedia } = await import('../engines/mediaEngine');
           resultUrl = await convertMedia(file, targetFormat, preset, setProgress);
           break;
         case 'spreadsheet':
@@ -85,9 +91,10 @@ export const useUniversalConverter = () => {
   };
 
   return {
+    analyzeFile,
     processFile,
     saveToDisk,
-    progress,
+    progress, 
     isProcessing,
     fileInfo: currentFileStatus
   };

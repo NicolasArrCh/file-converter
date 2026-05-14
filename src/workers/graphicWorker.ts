@@ -27,7 +27,7 @@ self.onmessage = async (e) => {
     image.write(format, (data) => {
       const blob = new Blob([data as any], { type: `image/${outputFormat}` });
       // Correct Web Worker postMessage signature
-      (self as any).postMessage({ blob }, [blob]);
+      self.postMessage({ blob });
     });
   });
 };

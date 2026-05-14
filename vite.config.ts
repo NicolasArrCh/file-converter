@@ -10,6 +10,17 @@ export default defineConfig({
       'Cross-Origin-Embedder-Policy': 'require-corp',
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('@ffmpeg')) return 'ffmpeg';
+          if (id.includes('@imagemagick')) return 'graphics';
+          if (id.includes('jspdf') || id.includes('mammoth') || id.includes('xlsx')) return 'docs';
+        },
+      },
+    },
+  },
   optimizeDeps: {
     exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util'],
   },
