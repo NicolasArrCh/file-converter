@@ -26,7 +26,8 @@ function App() {
     processFile, 
     saveToDisk,
     progress, 
-    isProcessing
+    isProcessing,
+    fileInfo
   } = useUniversalConverter();
 
   const [results, setResults] = useState<ConversionResult[]>([]);
@@ -40,6 +41,25 @@ function App() {
       });
     });
   }, []);
+
+  const handleConversion = async (targetFormat: string) => {
+    const file = (window as any)._currentFile;
+    if (!file) return;
+    setError(null);
+    try {
+      const url = await processFile(file, targetFormat);
+      const result = {
+        id: Math.random().toString(36).substring(7),
+        name: `AURORA_${file.name.split('.')[0]}.${targetFormat}`,
+        url,
+        type: file.type,
+        originalSize: file.size
+      };
+      setResults(prev => [result, ...prev]);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
 
   return (
     <div className="container py-12 md:py-24">
@@ -97,35 +117,74 @@ function App() {
               )}
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {['mp4', 'mkv', 'mp3', 'png', 'jpg', 'webp', 'pdf', 'xlsx', 'csv'].map(fmt => (
-                <button 
-                  key={fmt}
-                  disabled={isProcessing}
-                  onClick={async () => {
-                    const file = (window as any)._currentFile;
-                    if (!file) return;
-                    setError(null);
-                    try {
-                      const url = await processFile(file, fmt);
-                      const result = {
-                        id: Math.random().toString(36).substring(7),
-                        name: `AURORA_${file.name.split('.')[0]}.${fmt}`,
-                        url,
-                        type: file.type,
-                        originalSize: file.size
-                      };
-                      setResults(prev => [result, ...prev]);
-                    } catch (err: any) {
-                      setError(err.message);
-                    }
-                  }}
-                  className="btn-secondary flex items-center justify-between hover:bg-white hover:text-black group transition-all"
-                >
-                  <span className="uppercase tracking-widest font-bold text-[10px]">{fmt}</span>
-                  <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
-                </button>
-              ))}
+            {/* Image Specific Tools */}
+            {fileInfo?.category === 'graphic' && (
+              <div className="mb-10 p-6 rounded-2xl bg-white/[0.02] border border-white/5">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Herramientas de Imagen</p>
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input type="checkbox" className="hidden" />
+                    <div className="w-5 h-5 rounded-md border border-white/20 flex items-center justify-center group-hover:border-[#7028ff] transition-all">
+                      <div className="w-2.5 h-2.5 bg-[#7028ff] rounded-sm opacity-0 group-hover:opacity-100"></div>
+                    </div>
+                    <span className="text-xs font-medium text-slate-400">Eliminar Metadatos (Privacidad)</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input type="checkbox" className="hidden" />
+                    <div className="w-5 h-5 rounded-md border border-white/20 flex items-center justify-center group-hover:border-[#00d2ff] transition-all">
+                      <div className="w-2.5 h-2.5 bg-[#00d2ff] rounded-sm opacity-0 group-hover:opacity-100"></div>
+                    </div>
+                    <span className="text-xs font-medium text-slate-400">Optimizar para Web</span>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-6">
+              {fileInfo?.category === 'graphic' && (
+                <>
+                  <div className="space-y-3">
+                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em]">Estándar & Web</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                      {['png', 'jpg', 'webp', 'gif', 'bmp', 'ico', 'avif', 'heic'].map(fmt => (
+                        <button key={fmt} disabled={isProcessing} onClick={() => handleConversion(fmt)} className="btn-secondary text-[9px] uppercase tracking-tighter p-2">A {fmt}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em]">Profesional & Diseño</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                      {['tiff', 'svg', 'psd', 'eps', 'pdf', 'ai'].map(fmt => (
+                        <button key={fmt} disabled={isProcessing} onClick={() => handleConversion(fmt)} className="btn-secondary text-[9px] uppercase tracking-tighter p-2">A {fmt}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.3em]">Industria & Gaming</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                      {['tga', 'dds', 'hdr', 'exr', 'pcx', 'pnm', 'ktx'].map(fmt => (
+                        <button key={fmt} disabled={isProcessing} onClick={() => handleConversion(fmt)} className="btn-secondary text-[9px] uppercase tracking-tighter p-2">A {fmt}</button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {fileInfo?.category !== 'graphic' && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                  {(fileInfo?.category === 'media'
+                    ? ['mp4', 'mkv', 'mp3', 'wav', 'webm']
+                    : fileInfo?.category === 'spreadsheet'
+                    ? ['xlsx', 'csv', 'json']
+                    : ['pdf', 'docx', 'txt']
+                  ).map(fmt => (
+                    <button key={fmt} disabled={isProcessing} onClick={() => handleConversion(fmt)} className="btn-secondary flex items-center justify-between hover:bg-white hover:text-black group transition-all">
+                      <span className="uppercase tracking-widest font-bold text-[10px]">{fmt}</span>
+                      <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {isProcessing && (

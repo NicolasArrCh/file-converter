@@ -1,4 +1,4 @@
-export const convertGraphic = async (file: File, outputFormat: string): Promise<string> => {
+export const convertGraphic = async (file: File, outputFormat: string, options?: { strip?: boolean }): Promise<string> => {
   return new Promise((resolve, reject) => {
     // Phase III: Worker Orchestration (Biblia Técnica)
     const worker = new Worker(new URL('../workers/graphicWorker.ts', import.meta.url), {
@@ -18,6 +18,6 @@ export const convertGraphic = async (file: File, outputFormat: string): Promise<
     };
 
     // Transferable objects for zero-copy
-    worker.postMessage({ file, outputFormat });
+    worker.postMessage({ file, outputFormat, options });
   });
 };

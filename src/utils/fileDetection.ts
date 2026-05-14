@@ -47,7 +47,7 @@ const getCategory = (mime: string, ext: string): FileInfo['category'] => {
   if (mime.startsWith('video/') || mime.startsWith('audio/') || ['mp4', 'mkv', 'webm', 'mp3', 'wav', 'flac', 'avi', 'mov'].includes(ext)) return 'media';
   
   // Graphics
-  if (mime.startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'svg', 'tiff', 'ico'].includes(ext)) return 'graphic';
+  if (mime.startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'svg', 'tiff', 'ico', 'heic', 'heif', 'avif', 'psd', 'eps', 'pdf', 'tga', 'dds', 'hdr', 'exr', 'pcx', 'pnm'].includes(ext)) return 'graphic';
   
   // Spreadsheets
   if (['xlsx', 'xls', 'csv', 'ods', 'tsv'].includes(ext) || mime === 'text/csv' || mime.includes('spreadsheet')) return 'spreadsheet';
